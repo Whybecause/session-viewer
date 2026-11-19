@@ -10,10 +10,18 @@ It was built for a band that jams in Live's Session View with several people on 
 
 > Ableton and Live are trademarks of Ableton AG. This project is not affiliated with or endorsed by Ableton.
 
-<p>
-  <img src="docs/screenshots/grid.png" alt="The session grid on a phone" width="260">
-  <img src="docs/screenshots/settings.png" alt="The settings screen" width="260">
-  <img src="docs/screenshots/grid-fr.png" alt="The same grid in French" width="260">
+<p align="center">
+  <img src="docs/screenshots/grid.png" alt="The session grid on a phone in landscape: a tab per musician, clips, record bars" width="720">
+</p>
+<p align="center">
+  <img src="docs/screenshots/macros.png" alt="One musician's view, with the macros their knobs control at the bottom" width="720">
+</p>
+
+Each musician gets their own tabs and tracks, and a panel with the macros their knobs drive. The interface also comes
+in French:
+
+<p align="center">
+  <img src="docs/screenshots/macros-fr.png" alt="The same screen in French" width="720">
 </p>
 
 ## What you need
