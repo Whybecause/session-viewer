@@ -73,6 +73,12 @@ project folder, next to `Ableton Project Info`, and shared by every set of that 
 time starts from a copy of the global settings (`data/settings.json`), which a set never saved also uses. The
 settings screen shows which project they belong to.
 
+- A set outside a Live project (no `Ableton Project Info` in its folder or the one above) keeps its settings in a
+  `SessionViewer` folder next to it, shared with any other set saved in that same folder.
+- An unreadable project file is set aside as `settings.json.bak` and the project starts from the default settings.
+- Concert mode stays on when Live opens another project, so a Save As on stage never unlocks the phones.
+- Unsaved edits on a phone are dropped when Live opens another project, with a message.
+
 ## On the phone
 
 - **iPhone**: open the address in Safari, then Share > Add to Home Screen. The icon opens the app without browser

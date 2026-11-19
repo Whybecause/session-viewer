@@ -38,6 +38,16 @@ describe("SettingsStore", () => {
     expect(await readdir(join(path, ".."))).toEqual([]);
   });
 
+  test("reports a failed write", async () => {
+    const blocker = join(await mkdtemp(join(tmpdir(), "store-")), "a-file");
+    await writeFile(blocker, "");
+    const failures: Error[] = [];
+    const store = new SettingsStore(join(blocker, "settings.json"), DEFAULT_SETTINGS, 5, (err) => failures.push(err));
+    store.set({ ...DEFAULT_SETTINGS, startScene: 2 });
+    await store.flush();
+    expect(failures).toHaveLength(1);
+  });
+
   test("keeps serving values after a failed write", async () => {
     const blocker = join(await mkdtemp(join(tmpdir(), "store-")), "a-file");
     await writeFile(blocker, "");

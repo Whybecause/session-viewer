@@ -11,7 +11,7 @@ import { cueSendIndexes, sendIndex } from "./cue.ts";
 import { seedDemoData, watchDemo } from "./demo-live.ts";
 import { cueSpan, rememberIndexes } from "./musicians.ts";
 import { migrateRecSpans } from "./rec-migration.ts";
-import { settingsLocation, type SettingsLocation } from "./project-settings.ts";
+import { settingsLocation, withLockOf, type SettingsLocation } from "./project-settings.ts";
 import { isAllowedUpgrade } from "./origin.ts";
 import { ControlsState, rackTargets } from "./rack-controls.ts";
 import type {
@@ -92,7 +92,9 @@ const wss = new WebSocketServer({
 });
 
 if (IS_DEMO) await seedDemoData(DATA_DIR);
-let store = new SettingsStore(SETTINGS_PATH, await loadSettings(SETTINGS_PATH));
+const newStore = (path: string, settings: Settings) =>
+  new SettingsStore(path, settings, undefined, () => broadcast(noticeMessage("unsaved")));
+let store = newStore(SETTINGS_PATH, await loadSettings(SETTINGS_PATH));
 let settingsAt: SettingsLocation = { path: SETTINGS_PATH, project: null };
 let switching = Promise.resolve();
 
@@ -101,17 +103,19 @@ function useSettingsOf(setPath: string): Promise<void> {
   switching = switching.then(async () => {
     const next = settingsLocation(setPath, SETTINGS_PATH);
     if (next.path === settingsAt.path) return;
-    const settings = existsSync(next.path)
+    const loaded = existsSync(next.path)
       ? await loadSettings(next.path)
       : settingsAt.project === null
         ? store.current
         : await loadSettings(SETTINGS_PATH);
+    const settings = withLockOf(loaded, store.current);
     const previous = store;
-    store = new SettingsStore(next.path, settings);
+    store = newStore(next.path, settings);
     settingsAt = next;
     console.log(next.project === null ? "[settings] global settings" : `[settings] project ${next.project}: ${next.path}`);
     await previous.flush();
     broadcast(settingsMessage());
+    if (previous.current.volumeSources !== store.current.volumeSources) broadcast(fullState());
     controls.refresh();
   });
   return switching;
@@ -342,7 +346,8 @@ setInterval(() => {
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.once(signal, () => {
     stopRecLengths();
-    void store.flush().finally(() => process.exit(0));
+    // A project switch in flight still has the previous project's last change to write.
+    void switching.then(() => store.flush()).finally(() => process.exit(0));
   });
 }
 

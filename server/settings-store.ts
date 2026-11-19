@@ -11,6 +11,7 @@ export class SettingsStore {
     private readonly path: string,
     initial: Settings,
     private readonly delayMs = 300,
+    private readonly onFailedWrite: (err: Error) => void = () => undefined,
   ) {
     this.value = initial;
   }
@@ -39,7 +40,10 @@ export class SettingsStore {
     this.timer = undefined;
     this.writing = this.writing
       .then(() => saveSettings(this.path, this.value))
-      .catch((err: Error) => console.error("[settings] save failed:", err.message));
+      .catch((err: Error) => {
+        console.error("[settings] save failed:", err.message);
+        this.onFailedWrite(err);
+      });
     return this.writing;
   }
 }

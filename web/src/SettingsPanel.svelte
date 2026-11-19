@@ -8,7 +8,7 @@
   import { issuesOf } from "./lib/musician-issues.ts";
   import { myFamily, setMyFamily } from "./lib/my-family.svelte.ts";
   import { changeCount, draftError, holds, myNameAfterSave, settingsPatch, withRename, type SharedDraft } from "./lib/settings-draft.ts";
-  import { connection, sendSettings } from "./lib/session.svelte.ts";
+  import { connection, sendSettings, showNotice } from "./lib/session.svelte.ts";
   import ConnectSheet from "./ConnectSheet.svelte";
   import MusicianDetail from "./MusicianDetail.svelte";
   import SaveBar from "./SaveBar.svelte";
@@ -74,6 +74,19 @@
     untrack(() => {
       if (pending && holds(shared(next), pending.sent)) settled(pending.renames, next);
       else if (!pending && count === 0) settled(new Map(), next);
+    });
+  });
+
+  // Unsaved edits belong to the project they were made on: saving them on another would overwrite its musicians.
+  let shownProject: string | null | undefined;
+  $effect(() => {
+    const project = connection.project;
+    untrack(() => {
+      const isMoved = shownProject !== undefined && project !== shownProject;
+      shownProject = project;
+      if (!isMoved || (count === 0 && !pending)) return;
+      settled(new Map(), settings);
+      showNotice(t("settings.projectChanged", { project: project ?? t("settings.globalSettings") }));
     });
   });
 

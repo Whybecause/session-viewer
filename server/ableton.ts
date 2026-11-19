@@ -104,30 +104,50 @@ export function watchLive(onChange: OnChange, hooks: SettingsHooks, onSetPath: (
   }
   let setPath: string | null = null;
   let pathTimer: NodeJS.Timeout | undefined;
-  const readSetPath = () =>
-    ableton.song
+  let reading: Promise<boolean> | null = null;
+  let lastPathError = "";
+  // Bumped at each connect and disconnect: a read that outlives its connection must not start a load.
+  let connection = 0;
+
+  /** True when the set's path changed and its settings were swapped. */
+  const readSetPath = (): Promise<boolean> =>
+    (reading ??= ableton.song
       .get("file_path")
       .then(async (path) => {
+        lastPathError = "";
         if (path === setPath) return false;
         setPath = path;
+        // The set on screen may already be another one: its events must not reach the new project's settings.
+        currentId += 1;
         await onSetPath(path);
         return true;
       })
       .catch((err: Error) => {
-        console.warn("[live] cannot read the set's path:", err.message);
+        // Older Lives may not know the property: once is enough, not every poll.
+        if (err.message !== lastPathError) console.warn("[live] cannot read the set's path:", err.message);
+        lastPathError = err.message;
         return false;
-      });
+      })
+      .finally(() => {
+        reading = null;
+      }));
 
   bindConnectionEvents(ableton, {
     onConnect: () => {
       // Opening another set reconnects: its path is new even when the text is the same as before.
       setPath = null;
-      void readSetPath().finally(() => void reload());
+      const current = ++connection;
+      const isCurrent = () => current === connection;
+      void readSetPath().finally(() => isCurrent() && void reload());
       clearInterval(pathTimer);
       // A Save As to another project brings other settings: the set is read again with them.
-      pathTimer = setInterval(() => void readSetPath().then((moved) => moved && scheduleReload()), SET_PATH_POLL_MS);
+      pathTimer = setInterval(
+        () => void readSetPath().then((moved) => moved && isCurrent() && scheduleReload()),
+        SET_PATH_POLL_MS,
+      );
     },
     onDisconnect: () => {
+      connection += 1;
       clearInterval(pathTimer);
       currentId += 1;
       active = null;

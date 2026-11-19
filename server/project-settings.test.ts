@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { projectRoot, settingsLocation } from "./project-settings.ts";
+import { DEFAULT_SETTINGS } from "./protocol.ts";
+import { projectRoot, settingsLocation, withLockOf } from "./project-settings.ts";
 
 const projects = (...dirs: string[]) => (dir: string) => dirs.includes(dir);
 
@@ -29,5 +30,14 @@ describe("settingsLocation", () => {
 
   test("uses the global file for a set never saved", () => {
     expect(settingsLocation("", "/g.json", marked)).toEqual({ path: "/g.json", project: null });
+  });
+});
+
+describe("withLockOf", () => {
+  test("keeps concert mode on across a switch, and never turns it on", () => {
+    const locked = { ...DEFAULT_SETTINGS, locked: true };
+    const other = { ...DEFAULT_SETTINGS, startScene: 3 };
+    expect(withLockOf(other, locked)).toEqual({ ...other, locked: true });
+    expect(withLockOf(locked, DEFAULT_SETTINGS).locked).toBe(false);
   });
 });

@@ -49,7 +49,7 @@ export const connection = new Connection();
 const NOTICE_MS = 4000;
 let noticeTimer: ReturnType<typeof setTimeout> | undefined;
 
-function showNotice(text: string) {
+export function showNotice(text: string) {
   connection.notice = text;
   clearTimeout(noticeTimer);
   noticeTimer = setTimeout(() => (connection.notice = null), NOTICE_MS);

@@ -381,8 +381,11 @@ export async function loadSettings(path: string): Promise<Settings> {
     // falls through to the backup below
   }
   // The next save overwrites the file, so keep what was unreadable.
-  await copyFile(path, `${path}.bak`).catch(() => undefined);
-  console.warn(`[settings] ${path} is invalid, using defaults (copy kept as ${path}.bak)`);
+  const isBackedUp = await copyFile(path, `${path}.bak`).then(
+    () => true,
+    () => false,
+  );
+  console.warn(`[settings] ${path} is invalid, using defaults${isBackedUp ? ` (copy kept as ${path}.bak)` : ""}`);
   return DEFAULT_SETTINGS;
 }
 

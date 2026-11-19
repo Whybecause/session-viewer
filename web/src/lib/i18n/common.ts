@@ -11,6 +11,7 @@ export const en = {
   "notice.full": "Too many icons saved, remove some before adding more.",
   "notice.invalid": "Request refused.",
   "notice.locked": "Concert mode: settings are locked.",
+  "notice.unsaved": "Settings could not be saved on the computer (read-only folder?): they will be lost at the next restart.",
 } as const;
 
 export const fr: Record<keyof typeof en, string> = {
@@ -26,4 +27,5 @@ export const fr: Record<keyof typeof en, string> = {
   "notice.full": "Trop d'icônes enregistrées, retire-en avant d'en ajouter.",
   "notice.invalid": "Demande refusée.",
   "notice.locked": "Mode concert : réglages verrouillés.",
+  "notice.unsaved": "Réglages impossibles à enregistrer sur l'ordinateur (dossier en lecture seule ?) : ils seront perdus au prochain redémarrage.",
 };

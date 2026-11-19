@@ -239,7 +239,8 @@ export interface SettingsMessage {
   project?: string | null;
 }
 
-export type RejectionReason = "invalid" | "full" | "locked";
+/** unsaved: the settings could not be written, e.g. a read-only project folder; they are lost at the next restart. */
+export type RejectionReason = "invalid" | "full" | "locked" | "unsaved";
 
 /** Tells one client that its last request was not applied; the phone words it in its own language. */
 export interface NoticeMessage {

@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
+import type { Settings } from "./protocol.ts";
 
 export const SETTINGS_FOLDER = "SessionViewer";
 // Live creates it at the root of every project; a set saved in Backup/ sits one level below.
@@ -30,3 +31,6 @@ export function settingsLocation(setPath: string, globalPath: string, isProject?
   const root = projectRoot(setPath, isProject);
   return { path: join(root, SETTINGS_FOLDER, "settings.json"), project: basename(root) };
 }
+
+/** A Save As mid-concert must not unlock the phones, and another project's file never locks them by itself. */
+export const withLockOf = (next: Settings, current: Settings): Settings => ({ ...next, locked: current.locked });
