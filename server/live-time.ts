@@ -2,6 +2,7 @@ import type { Ableton } from "ableton-js";
 import type { Clip } from "ableton-js/ns/clip";
 import type { ClipSlot } from "ableton-js/ns/clip-slot";
 import type { Remover } from "./live-generation.ts";
+import { warnLive } from "./live-log.ts";
 import type { ClipBounds, ClipPosition, SongTiming } from "./timing.ts";
 
 type IsLive = () => boolean;
@@ -19,8 +20,7 @@ const INITIAL_SONG: SongTiming = {
   tempo: 120,
 };
 
-const warn = (label: string) => (err: unknown) =>
-  console.warn(`[live] timing ${label} not attached:`, (err as Error).message);
+const warn = (label: string) => (err: unknown) => warnLive(`timing ${label} not attached`, err);
 
 async function readBounds(clip: Clip): Promise<{ bounds: ClipBounds; position: number }> {
   const [looping, loopStart, loopEnd, startMarker, endMarker, position] = await Promise.all([

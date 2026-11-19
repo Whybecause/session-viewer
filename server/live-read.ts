@@ -8,6 +8,7 @@ import type { RackDevice } from "ableton-js/ns/rack-device";
 import type { Scene } from "ableton-js/ns/scene";
 import type { Track } from "ableton-js/ns/track";
 import { Color } from "ableton-js/util/color";
+import { warnLive } from "./live-log.ts";
 import { findRacks } from "./live-racks.ts";
 import type { ClipModel, TrackModel } from "./session-state.ts";
 
@@ -52,8 +53,7 @@ export interface TrackData {
 const OVERDUB_DEVICE = "Overdub";
 const OVERDUB_PARAM = "Overdub";
 
-export const warnRead = (label: string) => (err: unknown) =>
-  console.warn(`[live] ${label} not read:`, (err as Error).message);
+export const warnRead = (label: string) => (err: unknown) => warnLive(`${label} not read`, err);
 
 async function findOverdub(devices: readonly AnyDevice[]): Promise<DeviceParameter | null> {
   const device = devices.find((d) => d.raw.name === OVERDUB_DEVICE);

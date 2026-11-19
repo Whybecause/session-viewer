@@ -1,4 +1,5 @@
 import type { ClipSlot } from "ableton-js/ns/clip-slot";
+import { warnLive } from "./live-log.ts";
 import type { SessionModel } from "./session-state.ts";
 
 export type Remover = () => Promise<unknown>;
@@ -20,7 +21,7 @@ export async function keep(
     if (isLive()) bucket.push(remove);
     else await remove().catch(() => undefined);
   } catch (err) {
-    console.warn(`[live] listener ${label} not attached:`, (err as Error).message);
+    warnLive(`listener ${label} not attached`, err);
   }
 }
 
