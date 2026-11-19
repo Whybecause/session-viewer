@@ -1,5 +1,5 @@
 import { t } from "./i18n.ts";
-import type { DisplaySettings, DisplaySettingsPatch } from "../../../server/protocol.ts";
+import { isRecFileStem, type DisplaySettings, type DisplaySettingsPatch } from "../../../server/protocol.ts";
 
 /** What the save bar holds back; concert mode is sent on its own, as soon as it is switched. */
 export type SharedDraft = Omit<DisplaySettings, "locked">;
@@ -26,6 +26,8 @@ export function draftError({ startScene, musicians }: SharedDraft, sceneCount: n
   if (!Number.isInteger(startScene) || startScene < 1 || startScene > sceneCount) return t("settings.pleaseChooseScene", { count: sceneCount });
   const names = musicians.map((m) => m.name.trim());
   if (names.some((n) => n === "")) return t("settings.everyMusicianNeedsName");
+  const unusable = names.find((n) => !isRecFileStem(n));
+  if (unusable) return t("settings.musicianNameNotFileName", { name: unusable });
   const repeated = names.find((n, i) => names.indexOf(n) !== i);
   if (repeated) return t("settings.twoDuplicateNames", { name: repeated });
   for (const m of musicians) {

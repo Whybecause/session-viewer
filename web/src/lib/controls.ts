@@ -1,4 +1,4 @@
-import type { ControlFocus, ControlPanel, ControlsMessage } from "../../../server/protocol.ts";
+import { ownValue, type ControlFocus, type ControlPanel, type ControlsMessage } from "../../../server/protocol.ts";
 
 export interface MyControls {
   focus: ControlFocus;
@@ -10,7 +10,7 @@ export interface MyControls {
 export function myControls(message: ControlsMessage | null, musician: string | null): MyControls | null {
   if (!message || !musician || !Object.hasOwn(message.focus, musician)) return null;
   const focus = message.focus[musician];
-  return { focus, panel: message.panels[focus.track] ?? null };
+  return { focus, panel: ownValue(message.panels, focus.track) ?? null };
 }
 
 /** A partial message only carries the panels that changed; before any full one there is nothing to merge into. */

@@ -28,6 +28,32 @@ import {
 const BASE = { startScene: 9, hideScenesBefore: true };
 const alex = { name: "ALEX", view: { first: "ALEX 1", last: "vocal 4" }, cue: { send: "E", span: { first: "ALEX 1", last: "vocal 4" } } };
 
+describe("tracks named like Object.prototype members", () => {
+  test("a label or flag update is not mistaken for an existing one", () => {
+    expect(applyChainLabelUpdate(DEFAULT_SETTINGS, { trackName: "constructor", rack: null })).toBe(DEFAULT_SETTINGS);
+    const labelled = applyChainLabelUpdate(DEFAULT_SETTINGS, { trackName: "toString", rack: "R" });
+    expect(Object.keys(labelled?.chainLabels ?? {})).toEqual(["toString"]);
+    expect(applyMacroFlagUpdate(DEFAULT_SETTINGS, { trackName: "constructor", flag: null })).toBe(DEFAULT_SETTINGS);
+  });
+});
+
+describe("musician names", () => {
+  const view = { first: "a 1", last: "a 2" };
+  const named = (name: string) => ({ ...BASE, musicians: [{ name, view }] });
+
+  test("accepts free names, since they are also the rec file name", () => {
+    for (const name of ["Ben", "ALEX2", "Jean-Luc", "Émile", "sax & gtr"]) {
+      expect(parseDisplaySettingsPatch({ musicians: named(name).musicians })?.musicians?.[0].name).toBe(name);
+    }
+  });
+
+  test("refuses names that cannot be a file name", () => {
+    for (const name of ["a/b", "a\\b", ".hidden", "takes", "Takes", "a\0b"]) {
+      expect(parseDisplaySettingsPatch({ musicians: named(name).musicians })).toBeNull();
+    }
+  });
+});
+
 describe("parseDisplaySettings", () => {
   test("accepts a valid start scene and hide flag, dropping unknown fields", () => {
     expect(parseDisplaySettings({ ...BASE, admin: true })).toEqual({

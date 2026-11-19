@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { WebSocket, WebSocketServer } from "ws";
 import { watchLive } from "./ableton.ts";
 import { applyClientMessage } from "./client-messages.ts";
-import { DEFAULT_SCRIPTS_DIR, recLengthWriters } from "./clyphx-scripts.ts";
+import { DEFAULT_SCRIPTS_DIR, recLengthWriters, withHomeHidden } from "./clyphx-scripts.ts";
 import { cueSendIndexes, sendIndex } from "./cue.ts";
 import { seedDemoData, watchDemo } from "./demo-live.ts";
 import { cueSpan, rememberIndexes } from "./musicians.ts";
@@ -49,7 +49,7 @@ const IS_DEMO = process.env.DEMO === "1";
 const DATA_DIR = fileURLToPath(new URL(IS_DEMO ? "../data/demo/" : "../data/", import.meta.url));
 const SETTINGS_PATH = resolve(DATA_DIR, "settings.json");
 // One NAME.json per musician, written by any outside tool (see docs/integrations.md).
-const REC_LENGTH_DIR = process.env.REC_LENGTH_DIR
+const REC_LENGTH_DIR = process.env.REC_LENGTH_DIR && !IS_DEMO
   ? resolve(process.env.REC_LENGTH_DIR)
   : resolve(DATA_DIR, "rec-length");
 // Scripts that write the rec lengths themselves, so the app can warn when one writes elsewhere (docs/integrations.md).
@@ -60,11 +60,11 @@ const STATIC_DIR = resolve(fileURLToPath(new URL("../web/dist", import.meta.url)
 const MAX_CLIENT_MESSAGE_BYTES = 64 * 1024;
 const MAX_BUFFERED_BYTES = 4 * 1024 * 1024;
 const MAX_CLIENTS = 50;
+const MAX_CLIENTS_PER_ADDRESS = 8;
 const HEARTBEAT_MS = 30_000;
 const CLIENT_MESSAGES_PER_SECOND = 10;
 const LOG_THROTTLE_MS = 10_000;
 const CLOSE_POLICY_VIOLATION = 1008;
-const CLOSE_TRY_AGAIN_LATER = 1013;
 
 const serveStatic = createStaticHandler(STATIC_DIR);
 const server = createServer((req, res) => {
@@ -72,12 +72,18 @@ const server = createServer((req, res) => {
   if (req.url === "/") console.log(`[http] page loaded by ${req.socket.remoteAddress ?? "?"}`);
   void serveStatic(req, res);
 });
+const clientsPerAddress = new Map<string, number>();
 const wss = new WebSocketServer({
   server,
   path: "/ws",
   maxPayload: MAX_CLIENT_MESSAGE_BYTES,
   perMessageDeflate: { threshold: 1024, serverNoContextTakeover: true },
   verifyClient: ({ req }, done) => {
+    // Refused before the upgrade: one device opening sockets must not use up the places of the real phones.
+    const address = req.socket.remoteAddress ?? "?";
+    if (wss.clients.size >= MAX_CLIENTS || (clientsPerAddress.get(address) ?? 0) >= MAX_CLIENTS_PER_ADDRESS) {
+      return done(false, 503, "Busy");
+    }
     const allowed = isAllowedUpgrade({ host: req.headers.host, origin: req.headers.origin });
     if (!allowed) logThrottled(`[ws] refused a connection from origin ${req.headers.origin ?? "(none)"}`);
     done(allowed, 403, "Forbidden");
@@ -208,8 +214,8 @@ const toTransport = (song: SongTiming): Transport => ({
 const alive = new WeakSet<WebSocket>();
 
 wss.on("connection", (socket, req) => {
-  if (wss.clients.size > MAX_CLIENTS) return socket.close(CLOSE_TRY_AGAIN_LATER, "busy");
   const from = req.socket.remoteAddress ?? "?";
+  clientsPerAddress.set(from, (clientsPerAddress.get(from) ?? 0) + 1);
   console.log(`[ws] viewer connected from ${from} (${wss.clients.size} connected)`);
   const limiter = new RateLimiter(CLIENT_MESSAGES_PER_SECOND, 1000);
   alive.add(socket);
@@ -220,6 +226,9 @@ wss.on("connection", (socket, req) => {
     else socket.close(CLOSE_POLICY_VIOLATION, "rate limit");
   });
   socket.on("close", (code) => {
+    const remaining = (clientsPerAddress.get(from) ?? 1) - 1;
+    if (remaining > 0) clientsPerAddress.set(from, remaining);
+    else clientsPerAddress.delete(from);
     console.log(`[ws] viewer left from ${from}, code ${code} (${wss.clients.size} connected)`);
     live.setViewers(wss.clients.size);
   });
@@ -228,7 +237,7 @@ wss.on("connection", (socket, req) => {
   void Promise.all([entryScript(STATIC_DIR), IS_DEMO ? [] : recLengthWriters(REC_LENGTH_DIR, SCRIPTS_DIR, REC_LENGTH_WRITERS)]).then(([build, writers]) =>
     send(
       socket,
-      JSON.stringify({ type: "serverInfo", urls: lanUrls(), build, recLengthWriters: writers } satisfies ServerInfoMessage),
+      JSON.stringify({ type: "serverInfo", urls: lanUrls(), build, recLengthWriters: writers.map((writer) => withHomeHidden(writer)) } satisfies ServerInfoMessage),
     ),
   );
   send(socket, settingsMessage());

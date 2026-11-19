@@ -14,6 +14,18 @@ const base: SharedDraft = {
   chainMacro: 16,
 };
 
+describe("draftError names", () => {
+  test("refuses a name that cannot be a rec file name", () => {
+    for (const name of ["a/b", ".x", "takes"]) {
+      expect(draftError({ ...base, musicians: [{ ...alex, name }] }, 5)).toContain(name);
+    }
+  });
+
+  test("accepts free names", () => {
+    expect(draftError({ ...base, musicians: [{ ...alex, name: "Jean-Luc" }] }, 5)).toBeNull();
+  });
+});
+
 describe("settingsPatch", () => {
   test("is empty when nothing was edited", () => {
     expect(settingsPatch(base, { ...base, musicians: [{ ...alex }] })).toEqual({});

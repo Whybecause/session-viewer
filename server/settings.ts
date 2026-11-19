@@ -9,6 +9,8 @@ import {
   MAX_MACRO,
   MAX_MUSICIANS,
   SEND_LETTERS,
+  isRecFileStem,
+  ownValue,
   type ControlMode,
   type DisplaySettings,
   type DisplaySettingsPatch,
@@ -101,7 +103,7 @@ function rackControls(input: unknown, strict: boolean): RackControl[] | undefine
 
 /** Strict for a patch; a saved file only loses the field that is broken, not the musician's valid view. */
 function musician(input: unknown, strict: boolean): Musician | null {
-  if (!isRecord(input) || !isTrackName(input.name)) return null;
+  if (!isRecord(input) || !isTrackName(input.name) || !isRecFileStem(input.name)) return null;
   const view = musicianView(input.view);
   if (!view) return null;
   const parsedCue = cue(input.cue, view);
@@ -273,7 +275,7 @@ const sameFlag = (a: MacroFlag | undefined, b: MacroFlag | null) =>
 /** Null when the map is full. */
 export function applyMacroFlagUpdate(settings: Settings, { trackName, flag }: MacroFlagUpdate): Settings | null {
   // Compared by content: an object is never === its copy, and a moved key would re-read the whole set for nothing.
-  if (sameFlag(settings.macroFlags[trackName], flag)) return settings;
+  if (sameFlag(ownValue(settings.macroFlags, trackName), flag)) return settings;
   const { [trackName]: _previous, ...others } = settings.macroFlags;
   if (flag === null) return { ...settings, macroFlags: others };
   if (Object.keys(others).length >= MAX_MACRO_FLAGS) return null;
@@ -295,7 +297,7 @@ export function parseChainLabelUpdate(input: unknown): ChainLabelUpdate | null {
 /** Null when the map is full. */
 export function applyChainLabelUpdate(settings: Settings, { trackName, rack }: ChainLabelUpdate): Settings | null {
   // Unchanged keeps the key order too: a moved key would look like a new label and re-read the whole set.
-  if ((settings.chainLabels[trackName] ?? null) === rack) return settings;
+  if ((ownValue(settings.chainLabels, trackName) ?? null) === rack) return settings;
   const { [trackName]: _previous, ...others } = settings.chainLabels;
   if (rack === null) return { ...settings, chainLabels: others };
   if (Object.keys(others).length >= MAX_CHAIN_LABELS) return null;

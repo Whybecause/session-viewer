@@ -12,7 +12,8 @@ not set the length: it reads it from files.
 
 Folder: `data/rec-length/`, or the folder given by the `REC_LENGTH_DIR` environment variable.
 
-**`NAME.json`**, one per musician. `NAME` is the musician's name as set in the app: capital letters A-Z only.
+**`NAME.json`**, one per musician. `NAME` is the musician's name as set in the app, case included (`Ben.json` for "Ben"). The app refuses names that
+cannot be file names: no `/` or `\`, no leading dot, and `takes` is taken by the file below.
 
 ```json
 {"bars": 4}

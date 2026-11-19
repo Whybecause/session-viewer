@@ -1,6 +1,7 @@
 <script lang="ts">
   import { isError, musicianIssues, spanIndexes } from "../../server/musicians.ts";
   import type { ControlsMessage, Musician, RecLengths, RecLengthWriter, RecTakes, SessionView, Settings, TrackTime, Transport } from "../../server/protocol.ts";
+  import { ownValue } from "../../server/protocol.ts";
   import ControlsPanel from "./ControlsPanel.svelte";
   import { myControls } from "./lib/controls.ts";
   import { diagnostics } from "./lib/diagnostics.ts";
@@ -88,7 +89,7 @@
   const colorOf = (musician: Musician) => musician.color ?? colorOfTrack(spanOf(musician).start);
   const tabs = $derived(musicians.map((m) => ({ name: m.name, color: colorOf(m) })));
   const musicianColors = $derived(Object.fromEntries(tabs.map((t) => [t.name, t.color])));
-  const issueCount = $derived(musicianIssues(trackNames, musicians, (name) => trackRacks[name]).filter(isError).length);
+  const issueCount = $derived(musicianIssues(trackNames, musicians, (name) => ownValue(trackRacks, name)).filter(isError).length);
   const checks = $derived(diagnostics(musicians, recLengths, recLengthWriters, controls, settings.recLengthFiles));
   const toCheck = $derived(issueCount + checks.length);
   // The length each musician's record switches will use, over the tracks they drive.
@@ -361,10 +362,10 @@
       familyNames={editing.family}
       sameNameCount={editing.sameNameCount}
       current={iconFor(settings.trackIcons, editing.name)}
-      volumeSource={settings.volumeSources[editing.name]}
+      volumeSource={ownValue(settings.volumeSources, editing.name)}
       otherTrackNames={[...new Set(trackNames)].filter((n) => n !== editing.name)}
       racks={editing.racks}
-      chainRack={settings.chainLabels[editing.name]}
+      chainRack={ownValue(settings.chainLabels, editing.name)}
       macroFlag={settings.macroFlags?.[editing.name]}
       chainMacro={settings.chainMacro}
       {trackRacks}

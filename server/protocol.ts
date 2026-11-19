@@ -97,6 +97,14 @@ export interface DisplaySettings {
 export const SEND_LETTERS = "ABCDEFGHIJKL".split("");
 export const MAX_MUSICIANS = 20;
 
+/** A record's own entry: a track named "constructor" must not find Object.prototype's. */
+export const ownValue = <T>(record: Readonly<Record<string, T>>, key: string): T | undefined =>
+  Object.hasOwn(record, key) ? record[key] : undefined;
+
+/** The musician's name is also their rec file's name: no path, no hidden file, and takes.json is another file's. */
+export const isRecFileStem = (name: string): boolean =>
+  name.length > 0 && !/[/\\\0]/.test(name) && !name.startsWith(".") && name.toLowerCase() !== "takes";
+
 export interface TrackSpan {
   first: string;
   last: string;

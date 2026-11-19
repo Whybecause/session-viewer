@@ -1,7 +1,7 @@
 <script lang="ts">
   import { isIcon } from "../../server/icon.ts";
   import { ICON_GROUPS } from "./lib/icon-presets.ts";
-  import { MAX_MACRO, type MacroFlag } from "../../server/protocol.ts";
+  import { MAX_MACRO, ownValue, type MacroFlag } from "../../server/protocol.ts";
   import { sendChainLabel, sendMacroFlag, sendTrackIcon, sendVolumeSource } from "./lib/session.svelte.ts";
   import { t } from "./lib/i18n.ts";
   import Field from "./Field.svelte";
@@ -128,7 +128,7 @@
   const PICK: Choice = { value: NO_FLAG, label: t("icons.pick") };
   const flagRackChoices = $derived([
     PICK,
-    ...withSaved(trackRacks[flagTrack] ?? [], flagTrack === macroFlag?.track ? macroFlag?.rack : undefined, t("icons.message.rackAbsent")),
+    ...withSaved(ownValue(trackRacks, flagTrack) ?? [], flagTrack === macroFlag?.track ? macroFlag?.rack : undefined, t("icons.message.rackAbsent")),
   ]);
   const flagMacroChoices = [
     PICK,
@@ -263,7 +263,7 @@
               label={t("icons.selectLabel.flagRack", { trackName })}
               options={flagRackChoices}
               bind:value={flagRack}
-              invalid={!!macroFlag && flagRack === macroFlag.rack && !(trackRacks[flagTrack] ?? []).includes(flagRack)}
+              invalid={!!macroFlag && flagRack === macroFlag.rack && !(ownValue(trackRacks, flagTrack) ?? []).includes(flagRack)}
               onchange={chooseFlagRack}
             />
           </Field>

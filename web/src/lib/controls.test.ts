@@ -15,6 +15,11 @@ describe("myControls", () => {
     expect(myControls(message, "ALEX")).toEqual({ focus: message.focus.ALEX, panel });
   });
 
+  test("finds no panel for a track named like an Object.prototype member", () => {
+    const odd = { ...message, focus: { ALEX: { track: "constructor", macro: null, touch: 0 } } };
+    expect(myControls(odd, "ALEX")).toEqual({ focus: odd.focus.ALEX, panel: null });
+  });
+
   test("keeps the focus but no panel while the focused rack is missing", () => {
     expect(myControls(message, "BEN")).toEqual({ focus: message.focus.BEN, panel: null });
   });

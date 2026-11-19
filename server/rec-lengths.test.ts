@@ -47,6 +47,21 @@ describe("loadRecLengths", () => {
     expect(await loadRecLengths(dir)).toEqual({ ALEX: 2 });
   });
 
+  test("reads files named like any musician, accents and case included", async () => {
+    const dir = await tempDir();
+    await writeFile(join(dir, "Ben.json"), '{"bars": 2}');
+    await writeFile(join(dir, "Jean-Luc 2.json"), '{"bars": null}');
+    await writeFile(join(dir, "Émile.json"), '{"bars": 8}');
+    expect(await loadRecLengths(dir)).toEqual({ Ben: 2, "Jean-Luc 2": null, Émile: 8 });
+  });
+
+  test("never takes takes.json or a hidden file for a musician", async () => {
+    const dir = await tempDir();
+    await writeFile(join(dir, "takes.json"), '{"sax 1": 4}');
+    await writeFile(join(dir, ".hidden.json"), '{"bars": 4}');
+    expect(await loadRecLengths(dir)).toEqual({});
+  });
+
   test("is empty when the folder does not exist yet", async () => {
     expect(await loadRecLengths(join(await tempDir(), "missing"))).toEqual({});
   });

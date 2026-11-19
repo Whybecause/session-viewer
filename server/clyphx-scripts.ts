@@ -14,6 +14,13 @@ export function recLengthDir(source: string): string | null {
   return match ? resolve(expandHome(match[1])) : null;
 }
 
+/** What phones are told: the home folder becomes ~, so nobody on the network learns the account name. */
+export function withHomeHidden(writer: RecLengthWriter, home = homedir()): RecLengthWriter {
+  const { dir } = writer;
+  if (dir === null || (dir !== home && !dir.startsWith(join(home, "/")))) return writer;
+  return { ...writer, dir: `~${dir.slice(home.length)}` };
+}
+
 /** Scripts missing from this machine are left out: the app also runs where the set does not. */
 export async function recLengthWriters(ownDir: string, scriptsDir: string, scripts: readonly string[]): Promise<RecLengthWriter[]> {
   const found = await Promise.all(

@@ -2,7 +2,7 @@ import { mkdtemp, writeFile } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
-import { recLengthDir, recLengthWriters } from "./clyphx-scripts.ts";
+import { recLengthDir, recLengthWriters, withHomeHidden } from "./clyphx-scripts.ts";
 
 describe("recLengthDir", () => {
   test("reads the expanded folder of the VIEWER_REC_LEN_DIR line", () => {
@@ -32,5 +32,19 @@ describe("recLengthWriters", () => {
 
   test("checks nothing when no script is named", async () => {
     expect(await recLengthWriters("/data", "/nowhere", [])).toEqual([]);
+  });
+});
+
+describe("withHomeHidden", () => {
+  const writer = (dir: string | null) => ({ script: "a.py", dir, isOurs: false });
+
+  test("replaces the home folder by ~", () => {
+    expect(withHomeHidden(writer("/home/jo/set/rec"), "/home/jo")).toEqual(writer("~/set/rec"));
+  });
+
+  test("leaves other folders, and a folder that only starts with the same letters, alone", () => {
+    expect(withHomeHidden(writer("/srv/rec"), "/home/jo")).toEqual(writer("/srv/rec"));
+    expect(withHomeHidden(writer("/home/joanna/rec"), "/home/jo")).toEqual(writer("/home/joanna/rec"));
+    expect(withHomeHidden(writer(null), "/home/jo")).toEqual(writer(null));
   });
 });

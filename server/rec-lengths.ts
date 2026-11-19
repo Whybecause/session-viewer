@@ -1,13 +1,12 @@
 import { type FSWatcher, watch } from "node:fs";
 import { mkdir, readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
-import type { RecLengths, RecTakes } from "./protocol.ts";
+import { isRecFileStem, type RecLengths, type RecTakes } from "./protocol.ts";
 import { isRecord } from "./settings.ts";
 
 const MAX_BARS = 64;
-// Only the final files: the ClyphX script writes NAME.json.tmp, then renames it.
-const FILE_NAME = /^([A-Z]+)\.json$/;
-// Lowercase on purpose: FILE_NAME must never take it for a musician.
+// Only the final files: the writing tool creates NAME.json.tmp, then renames it.
+const FILE_NAME = /^(.+)\.json$/;
 const TAKES_FILE = "takes.json";
 
 /** Validates a file written by the ClyphX script; undefined when invalid. */
@@ -48,7 +47,7 @@ export async function loadRecLengths(dir: string): Promise<RecLengths> {
   const entries = await Promise.all(
     names.map(async (name): Promise<[string, number | null] | null> => {
       const musician = FILE_NAME.exec(name)?.[1];
-      if (!musician) return null;
+      if (!musician || !isRecFileStem(musician)) return null;
       try {
         const bars = parseRecLength(JSON.parse(await readFile(join(dir, name), "utf8")));
         if (bars !== undefined) return [musician, bars];
