@@ -1,0 +1,50 @@
+{
+  "name": "session-viewer",
+  "version": "1.0.0",
+  "description": "A read-only session view for your band's phones, for Ableton Live",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Whybecause/session-viewer.git"
+  },
+  "keywords": [
+    "ableton-live",
+    "session-view",
+    "phone",
+    "band",
+    "svelte"
+  ],
+  "scripts": {
+    "probe": "tsx scripts/probe.ts",
+    "probe:macros": "tsx scripts/probe-macros.ts",
+    "probe:midi": "tsx scripts/probe-midi.ts",
+    "build": "vite build web",
+    "start": "tsx server/index.ts",
+    "demo": "DEMO=1 tsx server/index.ts",
+    "dev": "tsx watch server/index.ts",
+    "dev:web": "vite web",
+    "test": "vitest run",
+    "check": "tsc --noEmit -p . && npx -y svelte-check@4.7.8 --workspace web --tsconfig ./tsconfig.json",
+    "setup:live": "tsx scripts/setup-live.ts"
+  },
+  "dependencies": {
+    "ableton-js": "5.0.4",
+    "ws": "8.22.2"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "7.3.1",
+    "@types/node": "26.6.6",
+    "@types/ws": "8.18.2",
+    "qrcode-generator": "2.0.4",
+    "svelte": "5.57.3",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2",
+    "vite": "8.3.7",
+    "vitest": "4.1.12"
+  },
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22.12"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "types": ["node", "svelte"]
+  },
+  "include": ["server", "scripts", "web/src/lib/*.ts"],
+  "exclude": ["web/src/**/*.svelte.ts"]
+}

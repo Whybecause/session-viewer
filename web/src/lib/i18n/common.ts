@@ -1,0 +1,29 @@
+export const en = {
+  "common.none": "None",
+  "common.cancel": "Cancel",
+  "common.save": "Save",
+  "common.remove": "Remove",
+  "common.add": "Add",
+  "common.close": "Close",
+  "common.copy": "Copy",
+  "common.copied": "Copied",
+  "common.serverUnreachable": "Server unreachable, try again in a moment.",
+  "notice.full": "Too many icons saved, remove some before adding more.",
+  "notice.invalid": "Request refused.",
+  "notice.locked": "Concert mode: settings are locked.",
+} as const;
+
+export const fr: Record<keyof typeof en, string> = {
+  "common.none": "Aucun",
+  "common.cancel": "Annuler",
+  "common.save": "Enregistrer",
+  "common.remove": "Retirer",
+  "common.add": "Ajouter",
+  "common.close": "Fermer",
+  "common.copy": "Copier",
+  "common.copied": "Copié",
+  "common.serverUnreachable": "Serveur injoignable, réessaie dans un instant.",
+  "notice.full": "Trop d'icônes enregistrées, retire-en avant d'en ajouter.",
+  "notice.invalid": "Demande refusée.",
+  "notice.locked": "Mode concert : réglages verrouillés.",
+};
