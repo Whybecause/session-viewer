@@ -8,7 +8,7 @@ if (!MUSICIAN) {
   console.error("Usage: npm run probe:midi <musician>");
   process.exit(1);
 }
-const TRACK_NAME = new RegExp(`^${MUSICIAN} \\d+$`);
+const TRACK_NAME = new RegExp(`^${MUSICIAN.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} \\d+$`);
 const SUMMARY_MS = 1000;
 
 const ableton = new Ableton();

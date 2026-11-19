@@ -45,7 +45,7 @@ const HOST = "0.0.0.0";
 const BROADCAST_COALESCE_MS = 30;
 const TIME_TICK_MS = 100;
 // `npm run demo`: a made-up set in its own folder, so the real settings are never touched.
-const IS_DEMO = process.env.DEMO === "1";
+const IS_DEMO = process.env.DEMO === "1" || process.argv.includes("--demo");
 const DATA_DIR = fileURLToPath(new URL(IS_DEMO ? "../data/demo/" : "../data/", import.meta.url));
 const SETTINGS_PATH = resolve(DATA_DIR, "settings.json");
 // One NAME.json per musician, written by any outside tool (see docs/integrations.md).

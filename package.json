@@ -20,7 +20,7 @@
     "probe:midi": "tsx scripts/probe-midi.ts",
     "build": "vite build web",
     "start": "tsx server/index.ts",
-    "demo": "DEMO=1 tsx server/index.ts",
+    "demo": "tsx server/index.ts --demo",
     "dev": "tsx watch server/index.ts",
     "dev:web": "vite web",
     "test": "vitest run",

@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { CONNECT_TIMEOUT_MS, OFFLINE_GRACE_MS, ReconnectingSocket, type SocketLike } from "./reconnecting-socket.ts";
 
+// Node only has a global CloseEvent from 23 on, and the code under test reads nothing but its code.
+const closeEvent = (code: number) => ({ code }) as CloseEvent;
+
 class FakeSocket implements SocketLike {
   readyState = 0;
   onopen: ((event: Event) => void) | null = null;
@@ -19,7 +22,7 @@ class FakeSocket implements SocketLike {
   }
   fail(code = 1006) {
     this.readyState = 3;
-    this.onclose?.(new CloseEvent("close", { code }));
+    this.onclose?.(closeEvent(code));
   }
 }
 
@@ -122,7 +125,7 @@ describe("ReconnectingSocket", () => {
     sockets[0].open();
     socket.reopen();
     sockets[0].onmessage?.(new MessageEvent("message", { data: "{}" }));
-    sockets[0].onclose?.(new CloseEvent("close", { code: 1006 }));
+    sockets[0].onclose?.(closeEvent(1006));
     expect(handlers.onMessage).not.toHaveBeenCalled();
     expect(handlers.onDrop).not.toHaveBeenCalled();
   });

@@ -1,4 +1,4 @@
-import { mkdtemp, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, symlink, writeFile } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
@@ -28,6 +28,15 @@ describe("recLengthWriters", () => {
     ]);
     await writeFile(join(dir, "other_writer.py"), 'VIEWER_REC_LEN_DIR = os.path.expanduser("~/elsewhere")');
     expect((await recLengthWriters(own, dir, SCRIPTS)).map((w) => w.isOurs)).toEqual([true, false]);
+  });
+
+  test("sees the same folder through a symlink", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "clyphx-"));
+    await mkdir(join(dir, "real"));
+    await symlink(join(dir, "real"), join(dir, "link"));
+    await writeFile(join(dir, "rec_writer.py"), `VIEWER_REC_LEN_DIR = os.path.expanduser("${join(dir, "link")}")`);
+    const [writer] = await recLengthWriters(join(dir, "real"), dir, ["rec_writer.py"]);
+    expect(writer.isOurs).toBe(true);
   });
 
   test("checks nothing when no script is named", async () => {

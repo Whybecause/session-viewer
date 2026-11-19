@@ -1,4 +1,4 @@
-import { cpSync, existsSync, rmSync } from "node:fs";
+import { cpSync, existsSync, renameSync, rmSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -25,8 +25,12 @@ if (!existsSync(library)) {
 }
 
 const target = join(library, "Remote Scripts", "AbletonJS");
+// Copied beside the target first: a failed copy must not leave Live without the script it had.
+const staging = `${target}.new`;
+rmSync(staging, { recursive: true, force: true });
+cpSync(SOURCE, staging, { recursive: true, filter: (path) => !SKIPPED.test(path) });
 rmSync(target, { recursive: true, force: true });
-cpSync(SOURCE, target, { recursive: true, filter: (path) => !SKIPPED.test(path) });
+renameSync(staging, target);
 console.log(
   `AbletonJS installed in ${target}\n` +
     "In Live: Settings > Link, Tempo & MIDI > Control Surface > AbletonJS (restart Live if it is not listed).",

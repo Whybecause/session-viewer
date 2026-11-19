@@ -1,3 +1,4 @@
+import { realpathSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
@@ -14,6 +15,22 @@ export function recLengthDir(source: string): string | null {
   return match ? resolve(expandHome(match[1])) : null;
 }
 
+/** Same folder through a symlink, or in another case on the file systems that ignore it. */
+function sameFolder(a: string, b: string): boolean {
+  const canonical = (path: string): string => {
+    const absolute = resolve(path);
+    const real = (() => {
+      try {
+        return realpathSync(absolute);
+      } catch {
+        return absolute;
+      }
+    })();
+    return process.platform === "darwin" || process.platform === "win32" ? real.toLowerCase() : real;
+  };
+  return canonical(a) === canonical(b);
+}
+
 /** What phones are told: the home folder becomes ~, so nobody on the network learns the account name. */
 export function withHomeHidden(writer: RecLengthWriter, home = homedir()): RecLengthWriter {
   const { dir } = writer;
@@ -27,7 +44,7 @@ export async function recLengthWriters(ownDir: string, scriptsDir: string, scrip
     scripts.map(async (script): Promise<RecLengthWriter[]> => {
       try {
         const dir = recLengthDir(await readFile(join(scriptsDir, script), "utf8"));
-        return [{ script, dir, isOurs: dir === resolve(ownDir) }];
+        return [{ script, dir, isOurs: dir !== null && sameFolder(dir, ownDir) }];
       } catch (err) {
         if ((err as NodeJS.ErrnoException).code !== "ENOENT") console.warn(`[clyphx] cannot read ${script}:`, (err as Error).message);
         return [];

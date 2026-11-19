@@ -56,7 +56,7 @@ The server prints the addresses to open (`on your network: …`). They are also 
 Settings > "Connect a phone", with a QR code.
 
 Want to look around first? `npm run build && npm run demo` serves a made-up set, with no Live needed, on its own
-settings in `data/demo/`. (On Windows, set `DEMO=1` yourself and run `npm start`.)
+settings in `data/demo/`.
 
 ## Musicians
 
@@ -128,6 +128,8 @@ npm run check     # tsc + svelte-check
 npm run dev       # server in watch mode
 npm run dev:web   # vite
 npm run probe     # traces Live's events
+npm run probe:macros -- "<track>"      # traces the macro changes of a rack
+npm run probe:midi -- <musician>      # traces notes and meters of a musician's tracks
 ```
 
 The interface is available in English and French. It follows the phone's language, or `?lang=fr` / `?lang=en`.
