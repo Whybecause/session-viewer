@@ -29,6 +29,8 @@ class Connection {
   tempo = $state<number | undefined>();
   transport = $state.raw<Transport | undefined>();
   settings = $state.raw<Settings | null>(null);
+  /** Live project the settings belong to; null for the global ones. */
+  project = $state<string | null>(null);
   recLengths = $state.raw<RecLengths>({});
   recTakes = $state.raw<RecTakes>({});
   controls = $state.raw<ControlsMessage | null>(null);
@@ -59,7 +61,10 @@ function apply(message: ServerMessage) {
     if (connection.message) connection.message = applyTrackUpdates(connection.message, message);
   }
   // Defaults first: a server older than this page sends no value for fields added since.
-  else if (message.type === "settings") connection.settings = { ...DEFAULT_SETTINGS, ...message.settings };
+  else if (message.type === "settings") {
+    connection.settings = { ...DEFAULT_SETTINGS, ...message.settings };
+    connection.project = message.project ?? null;
+  }
   else if (message.type === "notice") showNotice(t(`notice.${message.reason}`));
   else if (message.type === "recLengths") connection.recLengths = message.recLengths;
   else if (message.type === "recTakes") connection.recTakes = message.recTakes;

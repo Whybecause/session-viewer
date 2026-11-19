@@ -4,13 +4,14 @@ import { networkInterfaces } from "node:os";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { WebSocket, WebSocketServer } from "ws";
-import { watchLive } from "./ableton.ts";
+import { type OnChange, type SettingsHooks, watchLive } from "./ableton.ts";
 import { applyClientMessage } from "./client-messages.ts";
 import { DEFAULT_SCRIPTS_DIR, recLengthWriters, withHomeHidden } from "./clyphx-scripts.ts";
 import { cueSendIndexes, sendIndex } from "./cue.ts";
 import { seedDemoData, watchDemo } from "./demo-live.ts";
 import { cueSpan, rememberIndexes } from "./musicians.ts";
 import { migrateRecSpans } from "./rec-migration.ts";
+import { settingsLocation, type SettingsLocation } from "./project-settings.ts";
 import { isAllowedUpgrade } from "./origin.ts";
 import { ControlsState, rackTargets } from "./rack-controls.ts";
 import type {
@@ -91,7 +92,30 @@ const wss = new WebSocketServer({
 });
 
 if (IS_DEMO) await seedDemoData(DATA_DIR);
-const store = new SettingsStore(SETTINGS_PATH, await loadSettings(SETTINGS_PATH));
+let store = new SettingsStore(SETTINGS_PATH, await loadSettings(SETTINGS_PATH));
+let settingsAt: SettingsLocation = { path: SETTINGS_PATH, project: null };
+let switching = Promise.resolve();
+
+/** Each Live project keeps its own settings; one opened for the first time starts from the global ones. */
+function useSettingsOf(setPath: string): Promise<void> {
+  switching = switching.then(async () => {
+    const next = settingsLocation(setPath, SETTINGS_PATH);
+    if (next.path === settingsAt.path) return;
+    const settings = existsSync(next.path)
+      ? await loadSettings(next.path)
+      : settingsAt.project === null
+        ? store.current
+        : await loadSettings(SETTINGS_PATH);
+    const previous = store;
+    store = new SettingsStore(next.path, settings);
+    settingsAt = next;
+    console.log(next.project === null ? "[settings] global settings" : `[settings] project ${next.project}: ${next.path}`);
+    await previous.flush();
+    broadcast(settingsMessage());
+    controls.refresh();
+  });
+  return switching;
+}
 let model: SessionModel = EMPTY_SESSION;
 let liveConnected = false;
 let sent: { model: SessionModel; liveConnected: boolean } | null = null;
@@ -159,7 +183,8 @@ function flush() {
   broadcast(JSON.stringify({ type: "tracks", updates } satisfies TracksMessage));
 }
 
-const settingsMessage = () => JSON.stringify({ type: "settings", settings: store.current } satisfies SettingsMessage);
+const settingsMessage = () =>
+  JSON.stringify({ type: "settings", settings: store.current, project: settingsAt.project } satisfies SettingsMessage);
 const noticeMessage = (reason: RejectionReason) => JSON.stringify({ type: "notice", reason } satisfies NoticeMessage);
 const liveTrackNames = (): ReadonlySet<string> => new Set(liveConnected ? model.tracks.map((t) => t.name) : []);
 
@@ -266,21 +291,20 @@ server.on("error", (err) => {
   process.exit(1);
 });
 
-const live = (IS_DEMO ? watchDemo : watchLive)(
-  (nextModel, nextLiveConnected) => {
-    model = nextModel;
-    liveConnected = nextLiveConnected;
-    if (liveConnected) rememberViewPositions();
-    flushTimer ??= setTimeout(flush, BROADCAST_COALESCE_MS);
-  },
-  {
-    cueSends: (trackNames) => cueSendIndexes(trackNames, store.current.musicians),
-    signalSend: () => (store.current.signalSend === null ? null : sendIndex(store.current.signalSend)),
-    racks: () => rackTargets(store.current),
-    chainMacro: () => store.current.chainMacro,
-    controls,
-  },
-);
+const onLiveChange: OnChange = (nextModel, nextLiveConnected) => {
+  model = nextModel;
+  liveConnected = nextLiveConnected;
+  if (liveConnected) rememberViewPositions();
+  flushTimer ??= setTimeout(flush, BROADCAST_COALESCE_MS);
+};
+const settingsHooks: SettingsHooks = {
+  cueSends: (trackNames) => cueSendIndexes(trackNames, store.current.musicians),
+  signalSend: () => (store.current.signalSend === null ? null : sendIndex(store.current.signalSend)),
+  racks: () => rackTargets(store.current),
+  chainMacro: () => store.current.chainMacro,
+  controls,
+};
+const live = IS_DEMO ? watchDemo(onLiveChange, settingsHooks) : watchLive(onLiveChange, settingsHooks, useSettingsOf);
 
 live.setViewers(0);
 

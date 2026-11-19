@@ -235,6 +235,8 @@ export interface TimeMessage {
 export interface SettingsMessage {
   type: "settings";
   settings: Settings;
+  /** Folder name of the Live project these settings belong to; null for the global ones. */
+  project?: string | null;
 }
 
 export type RejectionReason = "invalid" | "full" | "locked";

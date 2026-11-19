@@ -8,6 +8,8 @@ export type OnChange = (model: SessionModel, liveConnected: boolean) => void;
 
 const RELOAD_DEBOUNCE_MS = 100;
 const RELOAD_RETRY_MS = 1000;
+// Live has no event for Save As: the set's path is read again this often.
+const SET_PATH_POLL_MS = 2000;
 
 export interface LiveWatch {
   timing(): TimingSnapshot;
@@ -64,7 +66,8 @@ const logger = {
   error: (message: string) => console.error(`[live] ${message}`),
 };
 
-export function watchLive(onChange: OnChange, hooks: SettingsHooks): LiveWatch {
+/** onSetPath: the open set's .als, "" while it was never saved; called at each connection and when it changes. */
+export function watchLive(onChange: OnChange, hooks: SettingsHooks, onSetPath: (path: string) => Promise<void>): LiveWatch {
   const ableton = new Ableton({ logger });
   const timing = new TimingWatcher(ableton);
   let model = EMPTY_SESSION;
@@ -99,9 +102,33 @@ export function watchLive(onChange: OnChange, hooks: SettingsHooks): LiveWatch {
     await Promise.all(stale.map((remove) => remove().catch(() => undefined)));
     if (g.isLive()) await watchSession(g, ctx).catch(failLoad(g));
   }
+  let setPath: string | null = null;
+  let pathTimer: NodeJS.Timeout | undefined;
+  const readSetPath = () =>
+    ableton.song
+      .get("file_path")
+      .then(async (path) => {
+        if (path === setPath) return false;
+        setPath = path;
+        await onSetPath(path);
+        return true;
+      })
+      .catch((err: Error) => {
+        console.warn("[live] cannot read the set's path:", err.message);
+        return false;
+      });
+
   bindConnectionEvents(ableton, {
-    onConnect: () => void reload(),
+    onConnect: () => {
+      // Opening another set reconnects: its path is new even when the text is the same as before.
+      setPath = null;
+      void readSetPath().finally(() => void reload());
+      clearInterval(pathTimer);
+      // A Save As to another project brings other settings: the set is read again with them.
+      pathTimer = setInterval(() => void readSetPath().then((moved) => moved && scheduleReload()), SET_PATH_POLL_MS);
+    },
     onDisconnect: () => {
+      clearInterval(pathTimer);
       currentId += 1;
       active = null;
       clearTimeout(reloadTimer);

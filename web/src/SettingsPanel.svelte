@@ -224,6 +224,7 @@
             {issues}
             {colorOf}
             networkCount={connection.serverUrls.length}
+            project={connection.project}
             onchange={edit}
             onlock={lock}
             onopen={(i) => go(i)}

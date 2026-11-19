@@ -25,6 +25,7 @@
     issues,
     colorOf,
     networkCount,
+    project,
     onchange,
     onlock,
     onopen,
@@ -45,6 +46,8 @@
     issues: MusicianIssue[];
     colorOf: (musician: Musician) => string;
     networkCount: number;
+    /** Live project whose settings these are; null for the global ones. */
+    project: string | null;
     onchange: (patch: Partial<SharedDraft>) => void;
     onlock: (locked: boolean) => void;
     onopen: (index: number) => void;
@@ -120,7 +123,7 @@
   <section aria-labelledby="group-title">
     <div class="section-head">
       <h3 id="group-title" class="section-title">{t("settings.groupDisplay")}</h3>
-      <span class="aside">{t("settings.forEveryone")}</span>
+      <span class="aside">{project === null ? t("settings.forEveryone") : t("settings.forProject", { project })}</span>
     </div>
     <div class="card">
       <div class="row">

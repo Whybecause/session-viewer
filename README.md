@@ -68,7 +68,10 @@ The screen is built from a list of **musicians**, set in the app's settings and 
 - optionally a colour, a cue return, racks whose macros their knobs drive, and an icon per track.
 
 On a phone, "I am" picks your tab. Settings can be locked for a concert so nobody changes them by accident.
-Settings are stored in `data/settings.json`.
+Settings belong to the Live project that is open: they are stored in `SessionViewer/settings.json` inside the
+project folder, next to `Ableton Project Info`, and shared by every set of that project. A project opened for the first
+time starts from a copy of the global settings (`data/settings.json`), which a set never saved also uses. The
+settings screen shows which project they belong to.
 
 ## On the phone
 
@@ -118,7 +121,7 @@ The formats are in [docs/integrations.md](docs/integrations.md).
 - Display only: it reads Live through AbletonJS and sends nothing back.
 - HTTP on the local network, no authentication. Anyone on that network can open the page and, unless locked,
   change the shared settings. Do not expose the port to the internet.
-- Settings and rec lengths live in `data/`, which is not versioned.
+- The global settings and rec lengths live in `data/`, which is not versioned. Project settings live in each project.
 
 ## Development
 
