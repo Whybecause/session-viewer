@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, readdir } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "vitest";
@@ -39,7 +39,9 @@ describe("SettingsStore", () => {
   });
 
   test("keeps serving values after a failed write", async () => {
-    const store = new SettingsStore("/proc/definitely/not/writable/settings.json", DEFAULT_SETTINGS, 5);
+    const blocker = join(await mkdtemp(join(tmpdir(), "store-")), "a-file");
+    await writeFile(blocker, "");
+    const store = new SettingsStore(join(blocker, "settings.json"), DEFAULT_SETTINGS, 5);
     store.set({ ...DEFAULT_SETTINGS, startScene: 4 });
     await store.flush();
     expect(store.current.startScene).toBe(4);
